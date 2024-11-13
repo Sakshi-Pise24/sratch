@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { RefreshCcw } from 'lucide-react';
 
 const CANVAS_WIDTH = 480;
@@ -13,7 +13,34 @@ const Stage = ({ sprite, onReset }) => {
     const context = canvas.getContext('2d');
     contextRef.current = context;
     drawGrid();
-  }, []);
+  }, []); // Empty dependency array, only runs on mount
+
+  // Memoize the drawSprite function to prevent unnecessary rerenders
+  const drawSprite = useCallback(() => {
+    const context = contextRef.current;
+    context.save();
+    context.translate(
+      sprite.x + CANVAS_WIDTH/2,
+      -sprite.y + CANVAS_HEIGHT/2
+    );
+    context.rotate((sprite.rotation * Math.PI) / 180);
+
+    // Draw cat sprite (simplified)
+    const scaledSize = sprite.size * 0.5;
+    context.fillStyle = '#FF9000';
+    context.beginPath();
+    context.ellipse(0, 0, scaledSize, scaledSize * 0.7, 0, 0, 2 * Math.PI);
+    context.fill();
+
+    // Draw face
+    context.fillStyle = '#000';
+    context.beginPath();
+    context.arc(-scaledSize/3, -scaledSize/4, scaledSize/6, 0, 2 * Math.PI);
+    context.arc(scaledSize/3, -scaledSize/4, scaledSize/6, 0, 2 * Math.PI);
+    context.fill();
+
+    context.restore();
+  }, [sprite]); // Only re-create drawSprite when sprite changes
 
   useEffect(() => {
     if (!contextRef.current) return;
@@ -21,7 +48,7 @@ const Stage = ({ sprite, onReset }) => {
     if (sprite.isVisible) {
       drawSprite();
     }
-  }, [sprite]);
+  }, [sprite, drawSprite]); // Include drawSprite in dependency array
 
   const drawGrid = () => {
     const context = contextRef.current;
@@ -56,32 +83,6 @@ const Stage = ({ sprite, onReset }) => {
     context.moveTo(0, CANVAS_HEIGHT/2);
     context.lineTo(CANVAS_WIDTH, CANVAS_HEIGHT/2);
     context.stroke();
-  };
-
-  const drawSprite = () => {
-    const context = contextRef.current;
-    context.save();
-    context.translate(
-      sprite.x + CANVAS_WIDTH/2,
-      -sprite.y + CANVAS_HEIGHT/2
-    );
-    context.rotate((sprite.rotation * Math.PI) / 180);
-
-    // Draw cat sprite (simplified)
-    const scaledSize = sprite.size * 0.5;
-    context.fillStyle = '#FF9000';
-    context.beginPath();
-    context.ellipse(0, 0, scaledSize, scaledSize * 0.7, 0, 0, 2 * Math.PI);
-    context.fill();
-
-    // Draw face
-    context.fillStyle = '#000';
-    context.beginPath();
-    context.arc(-scaledSize/3, -scaledSize/4, scaledSize/6, 0, 2 * Math.PI);
-    context.arc(scaledSize/3, -scaledSize/4, scaledSize/6, 0, 2 * Math.PI);
-    context.fill();
-
-    context.restore();
   };
 
   return (
